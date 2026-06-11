@@ -106,7 +106,7 @@ const logout = async (req, res) => {
 
   await tokenService.remove(userData.id);
 
-  res.sendStatus(204).redirect(process.env.CLIENT_HOST + '/login');
+  res.status(204).redirect(process.env.CLIENT_HOST + '/login');
 };
 
 const refresh = async (req, res) => {
