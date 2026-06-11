@@ -1,0 +1,113 @@
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+import { ApiError } from '../exeptions/api.error.js';
+import { jwtService } from '../services/jwt.service.js';
+import { userService } from '../services/user.service.js';
+import { emailService } from '../services/email.service.js';
+
+const getData = async (req, res) => {
+  const user = await userService.findByEmail(req.user.email);
+
+  res.status(200).send(userService.profileNormalize(user));
+};
+
+const changePassword = async (req, res) => {
+  const { oldPassword, newPassword1, newPassword2 } = req.body;
+
+  const user = await userService.findByEmail(req.user.email);
+  const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+  if (!isPasswordValid) {
+    return next(
+      ApiError.badRequest({ oldPassword: 'Old password is not correct' }),
+    );
+  }
+
+  if (newPassword1.trim() !== newPassword2.trim()) {
+    return next(
+      ApiError.badRequest({ newPassword: 'New passwords do not match' }),
+    );
+  }
+
+  if (newPassword1.trim() === oldPassword.trim()) {
+    return next(
+      ApiError.badRequest({
+        newPassword: 'New password must be different from old password',
+      }),
+    );
+  }
+
+  const password = await bcrypt.hash(newPassword1, 10);
+
+  user.password = password;
+  await user.save();
+
+  res.status(200).send('Password changed');
+};
+
+const changeEmail = async (req, res) => {
+  const { password, newEmail } = req.body;
+
+  const user = await userService.findByEmail(req.user.email);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    return next(
+      ApiError.badRequest({ oldPassword: 'Password is not correct' }),
+    );
+  }
+
+  const confirmToken = uuidv4();
+
+  user.confirmToken = confirmToken;
+  user.confirmTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
+  user.pendingEmail = newEmail;
+  await user.save();
+
+  await emailService.sendConfirmEmail(
+    newEmail,
+    confirmToken,
+    'Confirm changing Email',
+    'Changing Email address',
+  );
+
+  res.status(200).send('Confirmation email sent');
+};
+
+const confirmEmail = async (req, res) => {
+  const { confirmToken } = req.params;
+
+  const user = await User.findOne({ where: { confirmToken } });
+
+  if (!user) {
+    throw ApiError.notFound();
+  }
+
+  if (user.confirmTokenExpiry < new Date()) {
+    user.confirmToken = null;
+    user.confirmTokenExpiry = null;
+    user.pendingEmail = null;
+    await user.save();
+
+    return next(ApiError.badRequest({ message: 'Token expired' }));
+  }
+
+  const oldEmail = user.email;
+
+  user.email = user.pendingEmail;
+  user.pendingEmail = null;
+  user.confirmToken = null;
+  user.confirmTokenExpiry = null;
+  await user.save();
+
+  await emailService.sendEmailChanged(oldEmail, user.email);
+
+  res.status(200).send('Email changed');
+};
+
+export const profileController = {
+  getData,
+  changePassword,
+  changeEmail,
+  confirmEmail,
+};
