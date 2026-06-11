@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { ApiError } from '../exeptions/api.error.js';
-import { jwtService } from '../services/jwt.service.js';
 import { userService } from '../services/user.service.js';
 import { emailService } from '../services/email.service.js';
+import { User } from '../models/user.js';
 
 const getData = async (req, res) => {
   const user = await userService.findByEmail(req.user.email);
@@ -11,7 +11,21 @@ const getData = async (req, res) => {
   res.status(200).send(userService.profileNormalize(user));
 };
 
-const changePassword = async (req, res) => {
+const changeName = async (req, res) => {
+  const { name } = req.body;
+  const user = await userService.findByEmail(req.user.email);
+
+  if (!user) {
+    throw ApiError.unAuthorized();
+  }
+
+  user.name = name;
+  await user.save();
+
+  res.status(200).send(userService.profileNormalize(user));
+};
+
+const changePassword = async (req, res, next) => {
   const { oldPassword, newPassword1, newPassword2 } = req.body;
 
   const user = await userService.findByEmail(req.user.email);
@@ -45,7 +59,7 @@ const changePassword = async (req, res) => {
   res.status(200).send('Password changed');
 };
 
-const changeEmail = async (req, res) => {
+const changeEmail = async (req, res, next) => {
   const { password, newEmail } = req.body;
 
   const user = await userService.findByEmail(req.user.email);
@@ -64,17 +78,12 @@ const changeEmail = async (req, res) => {
   user.pendingEmail = newEmail;
   await user.save();
 
-  await emailService.sendConfirmEmail(
-    newEmail,
-    confirmToken,
-    'Confirm changing Email',
-    'Changing Email address',
-  );
+  await emailService.sendConfirmEmail(newEmail, confirmToken);
 
   res.status(200).send('Confirmation email sent');
 };
 
-const confirmEmail = async (req, res) => {
+const confirmEmail = async (req, res, next) => {
   const { confirmToken } = req.params;
 
   const user = await User.findOne({ where: { confirmToken } });
@@ -107,6 +116,7 @@ const confirmEmail = async (req, res) => {
 
 export const profileController = {
   getData,
+  changeName,
   changePassword,
   changeEmail,
   confirmEmail,

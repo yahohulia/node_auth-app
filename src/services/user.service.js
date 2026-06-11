@@ -11,8 +11,8 @@ function profileNormalize({ id, name, email }) {
   return { id, name, email };
 }
 
-function findByEmail(email) {
-  return User.findOne({ where: { email } });
+async  function findByEmail(email) {
+  return await User.findOne({ where: { email } });
 }
 
 async function register(name, email, password) {

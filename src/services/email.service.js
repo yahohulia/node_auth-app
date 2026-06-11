@@ -55,7 +55,7 @@ function sendEmailChanged(oldEmail, newEmail) {
   `;
 
   return send({
-    email,
+    email: oldEmail,
     html,
     subject: 'Email been changed',
   });

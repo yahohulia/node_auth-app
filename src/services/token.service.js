@@ -1,22 +1,15 @@
 import { Token } from '../models/token.js';
 
 async function save(userId, newToken) {
-  const token = await Token.findOne({ where: { userId } });
-
-  if (!token) {
-    await Token.create({ userId, refreshToken: newToken });
-  }
-
-  token.refreshToken = newToken;
-  await token.save();
+  await Token.upsert({ userId, refreshToken: newToken });
 }
 
-function getByToken(refreshToken) {
-  return Token.findOne({ where: { refreshToken } });
+async function getByToken(refreshToken) {
+  return await Token.findOne({ where: { refreshToken } });
 }
 
-function remove(userId) {
-  Token.destroy({ where: { userId } });
+async function remove(userId) {
+  await Token.destroy({ where: { userId } });
 }
 
 export const tokenService = {

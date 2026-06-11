@@ -1,4 +1,5 @@
-import bcrypt, { hash } from 'bcrypt';
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 import { User } from '../models/user.js';
 import { userService } from '../services/user.service.js';
 import { jwtService } from '../services/jwt.service.js';
@@ -70,7 +71,7 @@ const activate = async (req, res) => {
   }
 
   user.activationToken = null;
-  user.save();
+  await user.save();
 
   res.send(user);
 };
@@ -79,9 +80,9 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userService.findByEmail(email);
-  const isPasswordValid = bcrypt.compare(password, user.password);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  if (!email || !isPasswordValid) {
+  if (!user || !isPasswordValid) {
     throw ApiError.badRequest('Email or password is incorrect');
   }
 

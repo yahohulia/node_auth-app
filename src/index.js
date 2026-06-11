@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth.route.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { profileRouter } from './routes/profile.route.js';
+import { ApiError } from './exeptions/api.error.js';
 
 const PORT = process.env.PORT || 3005;
 
@@ -21,10 +22,10 @@ app.use(
 );
 
 app.use(authRouter);
-app.use('/profile', profileRouter)
+app.use('/profile', profileRouter);
 
-app.get('/', (req, res) => {
-  res.send('Ok');
+app.use((req, res, next) => {
+  next(ApiError.notFound());
 });
 
 app.use(errorMiddleware);
