@@ -73,13 +73,18 @@ const activate = async (req, res) => {
   user.activationToken = null;
   await user.save();
 
-  res.send(user);
+  res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userService.findByEmail(email);
+
+  if (user.activationToken) {
+    throw ApiError.badRequest('Please activate your email first');
+  }
+
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!user || !isPasswordValid) {
@@ -87,6 +92,7 @@ const login = async (req, res) => {
   }
 
   generateTokens(res, user);
+  res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
 const logout = async (req, res) => {
@@ -100,7 +106,7 @@ const logout = async (req, res) => {
 
   await tokenService.remove(userData.id);
 
-  res.sendStatus(204);
+  res.sendStatus(204).redirect(process.env.CLIENT_HOST + '/login');
 };
 
 const refresh = async (req, res) => {
