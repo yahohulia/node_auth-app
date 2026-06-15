@@ -11,7 +11,7 @@ function profileNormalize({ id, name, email }) {
   return { id, name, email };
 }
 
-async  function findByEmail(email) {
+async function findByEmail(email) {
   return await User.findOne({ where: { email } });
 }
 
@@ -36,4 +36,19 @@ async function register(name, email, password) {
   await emailService.sendActivationEmail(email, activationToken);
 }
 
-export const userService = { normalize, profileNormalize, findByEmail, register };
+const registerOAuth = async (name, email) => {
+  return User.create({
+    name,
+    email,
+    password: uuidv4(),
+    activationToken: null,
+  });
+};
+
+export const userService = {
+  normalize,
+  profileNormalize,
+  findByEmail,
+  register,
+  registerOAuth,
+};

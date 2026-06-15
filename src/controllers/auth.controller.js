@@ -73,6 +73,8 @@ const activate = async (req, res) => {
   user.activationToken = null;
   await user.save();
 
+  await generateTokens(res, user);
+
   res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
@@ -91,7 +93,8 @@ const login = async (req, res) => {
     throw ApiError.badRequest('Email or password is incorrect');
   }
 
-  generateTokens(res, user);
+  await generateTokens(res, user);
+
   res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
@@ -106,7 +109,7 @@ const logout = async (req, res) => {
 
   await tokenService.remove(userData.id);
 
-  res.status(204).redirect(process.env.CLIENT_HOST + '/login');
+  res.redirect(process.env.CLIENT_HOST + '/login');
 };
 
 const refresh = async (req, res) => {
@@ -124,7 +127,7 @@ const refresh = async (req, res) => {
   generateTokens(res, user);
 };
 
-const generateTokens = async (res, user) => {
+export const generateTokens = async (res, user) => {
   const normalizedUser = userService.normalize(user);
 
   const accessToken = jwtService.sign(normalizedUser);
@@ -209,4 +212,5 @@ export const authController = {
   logout,
   resetPassword,
   confirmResetPassword,
+  generateTokens,
 };
