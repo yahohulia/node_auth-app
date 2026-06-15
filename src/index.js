@@ -6,6 +6,8 @@ import { authRouter } from './routes/auth.route.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { profileRouter } from './routes/profile.route.js';
 import { ApiError } from './exeptions/api.error.js';
+import { oauthRouter } from './routes/oauth.route.js';
+import passport from './utils/passport.js';
 
 const PORT = process.env.PORT || 3005;
 
@@ -21,8 +23,10 @@ app.use(
   }),
 );
 
-app.use(authRouter);
-app.use('/profile', profileRouter);
+app.use(passport.initialize());
+app.use(oauthRouter);
+app.use('/api', authRouter);
+app.use('/api/profile', profileRouter);
 
 app.use((req, res, next) => {
   next(ApiError.notFound());
