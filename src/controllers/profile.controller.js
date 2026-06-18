@@ -26,32 +26,30 @@ const changeName = async (req, res) => {
 };
 
 const changePassword = async (req, res, next) => {
-  const { oldPassword, newPassword1, newPassword2 } = req.body;
+  const { oldPassword, newPassword, confirmedPassword } = req.body;
 
   const user = await userService.findByEmail(req.user.email);
   const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
 
+  if (!oldPassword || !newPassword || !confirmedPassword) {
+    return next(ApiError.badRequest('All password fields are required'));
+  }
+
   if (!isPasswordValid) {
+    return next(ApiError.badRequest('Old password is not correct'));
+  }
+
+  if (newPassword !== confirmedPassword) {
+    return next(ApiError.badRequest('New passwords do not match'));
+  }
+
+  if (newPassword === oldPassword) {
     return next(
-      ApiError.badRequest({ oldPassword: 'Old password is not correct' }),
+      ApiError.badRequest('New password must be different from old password'),
     );
   }
 
-  if (newPassword1.trim() !== newPassword2.trim()) {
-    return next(
-      ApiError.badRequest({ newPassword: 'New passwords do not match' }),
-    );
-  }
-
-  if (newPassword1.trim() === oldPassword.trim()) {
-    return next(
-      ApiError.badRequest({
-        newPassword: 'New password must be different from old password',
-      }),
-    );
-  }
-
-  const password = await bcrypt.hash(newPassword1, 10);
+  const password = await bcrypt.hash(newPassword, 10);
 
   user.password = password;
   await user.save();
@@ -61,6 +59,22 @@ const changePassword = async (req, res, next) => {
 
 const changeEmail = async (req, res, next) => {
   const { password, newEmail } = req.body;
+
+  if (!password || !newEmail) {
+    return next(ApiError.badRequest('Password and new email are required'));
+  }
+
+  if (newEmail === req.user.email) {
+    return next(
+      ApiError.badRequest('New email must be different from the current one'),
+    );
+  }
+
+  const existingUser = await userService.findByEmail(newEmail);
+
+  if (existingUser) {
+    return next(ApiError.badRequest('This email is already in use'));
+  }
 
   const user = await userService.findByEmail(req.user.email);
   const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -72,9 +86,10 @@ const changeEmail = async (req, res, next) => {
   }
 
   const confirmToken = uuidv4();
+  const TTL = new Date(Date.now() + 1 * 60 * 60 * 1000);
 
   user.confirmToken = confirmToken;
-  user.confirmTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
+  user.confirmTokenExpiry = TTL;
   user.pendingEmail = newEmail;
   await user.save();
 
@@ -89,7 +104,9 @@ const confirmEmail = async (req, res, next) => {
   const user = await User.findOne({ where: { confirmToken } });
 
   if (!user) {
-    throw ApiError.notFound();
+    throw ApiError.notFound({
+      message: 'Invalid or non-existent confirmation token',
+    });
   }
 
   if (user.confirmTokenExpiry < new Date()) {

@@ -12,11 +12,13 @@ profileRouter.post(
   authMiddleware,
   catchError(profileController.changeName),
 );
+
 profileRouter.post(
   '/change-email',
   authMiddleware,
   catchError(profileController.changeEmail),
 );
+
 profileRouter.get(
   '/change-email/:confirmToken',
   authMiddleware,

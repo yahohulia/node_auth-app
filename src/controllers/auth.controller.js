@@ -78,19 +78,36 @@ const activate = async (req, res) => {
   res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   const { email, password } = req.body;
+
+  const errors = {
+    email: validateEmail(email),
+    password: validatePassword(password),
+  };
+
+  if (errors.email || errors.password) {
+    throw ApiError.badRequest('', errors);
+  }
+
+  if (!email || !password) {
+    return next(ApiError.badRequest('All fields are required'));
+  }
 
   const user = await userService.findByEmail(email);
 
-  if (user.activationToken) {
-    throw ApiError.badRequest('Please activate your email first');
+  if (!user) {
+    return next(ApiError.badRequest('Email or password is incorrect'));
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  if (!user || !isPasswordValid) {
-    throw ApiError.badRequest('Email or password is incorrect');
+  if (!isPasswordValid) {
+    return next(ApiError.badRequest('Email or password is incorrect'));
+  }
+
+  if (user.activationToken) {
+    return next(ApiError.badRequest('Please activate your email first'));
   }
 
   await generateTokens(res, user);
@@ -98,13 +115,13 @@ const login = async (req, res) => {
   res.redirect(process.env.CLIENT_HOST + '/profile');
 };
 
-const logout = async (req, res) => {
+const logout = async (req, res, next) => {
   const { refreshToken } = req.cookies;
 
   const userData = jwtService.verifyRefresh(refreshToken);
 
   if (!userData || !refreshToken) {
-    throw ApiError.unAuthorized();
+    return next(ApiError.unAuthorized());
   }
 
   await tokenService.remove(userData.id);
@@ -112,14 +129,14 @@ const logout = async (req, res) => {
   res.redirect(process.env.CLIENT_HOST + '/login');
 };
 
-const refresh = async (req, res) => {
+const refresh = async (req, res, next) => {
   const { refreshToken } = req.cookies;
 
   const userData = jwtService.verifyRefresh(refreshToken);
   const token = await tokenService.getByToken(refreshToken);
 
   if (!userData || !token) {
-    throw ApiError.unAuthorized();
+    return next(ApiError.unAuthorized());
   }
 
   const user = await userService.findByEmail(userData.email);
@@ -146,13 +163,17 @@ export const generateTokens = async (res, user) => {
   });
 };
 
-const resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
   const { email } = req.body;
 
   const user = await userService.findByEmail(email);
 
+  const erorrs = {
+    email: 'Email is required',
+  };
+
   if (!user) {
-    throw ApiError.notFound();
+    return next(ApiError.notFound(erorrs));
   }
 
   const confirmToken = uuidv4();
@@ -168,25 +189,25 @@ const resetPassword = async (req, res) => {
 
 const confirmResetPassword = async (req, res, next) => {
   const { confirmToken } = req.params;
-  const { newPassword1, newPassword2 } = req.body;
+  const { newPassword, confirmedPassword } = req.body;
 
   const user = await User.findOne({ where: { confirmToken } });
 
   if (!user) {
-    throw ApiError.notFound();
+    return next(ApiError.notFound({ message: 'User not found' }));
   }
 
   if (user.confirmTokenExpiry < new Date()) {
     return next(ApiError.badRequest({ message: 'Token expired' }));
   }
 
-  if (newPassword1.trim() !== newPassword2.trim()) {
+  if (newPassword.trim() !== confirmedPassword.trim()) {
     return next(
       ApiError.badRequest({ newPassword: 'New passwords do not match' }),
     );
   }
 
-  const isSamePassword = await bcrypt.compare(newPassword1, user.password);
+  const isSamePassword = await bcrypt.compare(confirmedPassword, user.password);
 
   if (isSamePassword) {
     return next(
@@ -196,7 +217,7 @@ const confirmResetPassword = async (req, res, next) => {
     );
   }
 
-  user.password = await bcrypt.hash(newPassword1, 10);
+  user.password = await bcrypt.hash(newPassword, 10);
   user.confirmToken = null;
   user.confirmTokenExpiry = null;
   await user.save();

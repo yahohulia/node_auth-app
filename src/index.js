@@ -29,7 +29,7 @@ app.use('/api', authRouter);
 app.use('/api/profile', profileRouter);
 
 app.use((req, res, next) => {
-  next(ApiError.notFound());
+  return next(ApiError.notFound());
 });
 
 app.use(errorMiddleware);

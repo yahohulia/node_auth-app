@@ -12,7 +12,9 @@ function profileNormalize({ id, name, email }) {
 }
 
 async function findByEmail(email) {
-  return await User.findOne({ where: { email } });
+  const user = await User.findOne({ where: { email } });
+
+  return user;
 }
 
 async function register(name, email, password) {
