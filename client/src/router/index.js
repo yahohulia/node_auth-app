@@ -38,6 +38,11 @@ const routes = [
     component: () => import('../pages/ActivationPage.vue'),
     meta: { public: true },
   },
+  {
+    path: '/change-email/:confirmToken',
+    component: () => import('../pages/ConfirmChangeEmailPage.vue'),
+    meta: { public: true },
+  },
 ];
 
 const router = createRouter({
@@ -48,7 +53,9 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
 
-  if (to.meta.public) return;
+  if (to.meta.public) {
+    return;
+  }
 
   if (!auth.user && !auth.accessToken) {
     try {
@@ -56,8 +63,13 @@ router.beforeEach(async (to) => {
     } catch {}
   }
 
-  if (to.meta.auth && !auth.user) return '/login';
-  if (to.meta.guest && auth.user) return '/profile';
+  if (to.meta.auth && !auth.user) {
+    return '/login';
+  }
+
+  if (to.meta.guest && auth.user) {
+    return '/profile';
+  }
 });
 
 export default router;

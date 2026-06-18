@@ -61,8 +61,8 @@ const submitEmail = async () => {
 };
 
 const oldPassword = ref('');
-const newPassword1 = ref('');
-const newPassword2 = ref('');
+const newPassword = ref('');
+const confirmedPassword = ref('');
 const passLoading = ref(false);
 const passSuccess = ref(false);
 const passErrors = ref(null);
@@ -74,13 +74,13 @@ const submitPassword = async () => {
   try {
     await profileApi.changePassword(
       oldPassword.value,
-      newPassword1.value,
-      newPassword2.value,
+      newPassword.value,
+      confirmedPassword.value,
     );
     passSuccess.value = true;
     oldPassword.value = '';
-    newPassword1.value = '';
-    newPassword2.value = '';
+    newPassword.value = '';
+    confirmedPassword.value = '';
   } catch (err) {
     passErrors.value = err.response?.data?.errors || {
       general: err.response?.data?.message || 'Failed to change password',
@@ -203,7 +203,6 @@ onMounted(async () => {
               v-model="oldPassword"
               type="password"
               placeholder="••••••••"
-              :class="{ error: passErrors?.oldPassword }"
             />
             <p v-if="passErrors?.oldPassword" class="field-error">
               {{ passErrors.oldPassword }}
@@ -212,22 +211,20 @@ onMounted(async () => {
           <div class="form-group">
             <label>New password</label>
             <input
-              v-model="newPassword1"
+              v-model="newPassword"
               type="password"
               placeholder="Min. 6 characters"
-              :class="{ error: passErrors?.newPassword }"
             />
           </div>
           <div class="form-group">
             <label>Confirm new password</label>
             <input
-              v-model="newPassword2"
+              v-model="confirmedPassword"
               type="password"
               placeholder="Repeat password"
               :class="{ error: passErrors?.newPassword }"
             />
             <p v-if="passErrors?.newPassword" class="field-error">
-              {{ passErrors.newPassword }}
             </p>
           </div>
           <button class="btn" :disabled="passLoading" @click="submitPassword">

@@ -14,7 +14,7 @@ const submit = async () => {
     await authApi.resetPassword(email.value);
     success.value = true;
   } catch (err) {
-    error.value = err.response?.data?.message || 'Something went wrong';
+    error.value = err.response?.data || 'Something went wrong';
   } finally {
     loading.value = false;
   }
@@ -31,8 +31,6 @@ const submit = async () => {
         Check your email for a reset link.
       </div>
 
-      <div v-if="error" class="alert alert--error">{{ error }}</div>
-
       <template v-if="!success">
         <div class="form-group">
           <label>Email</label>
@@ -42,6 +40,10 @@ const submit = async () => {
             placeholder="you@example.com"
             @keyup.enter="submit"
           />
+        </div>
+
+        <div v-if="error?.errors?.email" class="alert alert--error">
+          {{ error.errors.email }}
         </div>
 
         <button class="btn" :disabled="loading" @click="submit">

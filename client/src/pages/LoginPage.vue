@@ -20,21 +20,17 @@ const submit = async () => {
       <h1 class="card__title">Welcome back</h1>
       <p class="card__subtitle">Sign in to your account</p>
 
-      <div v-if="auth.error?.general" class="alert alert--error">
-        {{ auth.error.general }}
-      </div>
-
       <div class="form-group">
         <label>Email</label>
         <input
           v-model="email"
           type="email"
           placeholder="you@example.com"
-          :class="{ error: auth.error?.email }"
+          :class="{ error: auth.error?.errors?.email }"
           @keyup.enter="submit"
         />
-        <p v-if="auth.error?.email" class="field-error">
-          {{ auth.error.email }}
+        <p v-if="auth.error?.errors?.email" class="field-error">
+          {{ auth.error.errors.email }}
         </p>
       </div>
 
@@ -45,7 +41,7 @@ const submit = async () => {
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
             placeholder="••••••••"
-            :class="{ error: auth.error?.password }"
+            :class="{ error: auth.error?.errors?.password }"
             @keyup.enter="submit"
           />
           <button
@@ -57,9 +53,13 @@ const submit = async () => {
             <Eye v-else :size="18" />
           </button>
         </div>
-        <p v-if="auth.error?.password" class="field-error">
-          {{ auth.error.password }}
+        <p v-if="auth.error?.errors?.password" class="field-error">
+          {{ auth.error.errors.password }}
         </p>
+      </div>
+
+      <div v-if="auth.error?.message" class="alert alert--error">
+        {{ auth.error.message }}
       </div>
 
       <button class="btn" :disabled="auth.loading" @click="submit">

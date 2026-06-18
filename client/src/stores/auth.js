@@ -22,13 +22,14 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (name, email, password) => {
     loading.value = true;
     error.value = null;
+
     try {
       await authApi.register(name, email, password);
+
       return true;
     } catch (err) {
-      error.value = err.response?.data?.errors || {
-        general: 'Registration failed',
-      };
+      error.value = err.response?.data?.errors || 'Registration failed';
+
       return false;
     } finally {
       loading.value = false;
@@ -38,15 +39,17 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (email, password) => {
     loading.value = true;
     error.value = null;
+
     try {
       const res = await authApi.login(email, password);
+
       setAuth(res.data.user, res.data.accessToken);
       router.push('/profile');
+
       return true;
     } catch (err) {
-      error.value = err.response?.data?.errors || {
-        general: err.response?.data?.message || 'Login failed',
-      };
+      error.value = err.response?.data || 'Login failed';
+
       return false;
     } finally {
       loading.value = false;
@@ -65,6 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
   const refresh = async () => {
     try {
       const res = await authApi.refresh();
+
       setAuth(res.data.user, res.data.accessToken);
     } catch {
       clearAuth();

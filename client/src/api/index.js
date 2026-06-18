@@ -7,9 +7,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const auth = useAuthStore();
+
   if (auth.accessToken) {
     config.headers.Authorization = `Bearer ${auth.accessToken}`;
   }
+
   return config;
 });
 
@@ -25,14 +27,17 @@ api.interceptors.response.use(
       !original.url.includes('/refresh')
     ) {
       original._retry = true;
+
       try {
         await auth.refresh();
         original.headers.Authorization = `Bearer ${auth.accessToken}`;
+
         return api(original);
       } catch {
         auth.logout();
       }
     }
+
     return Promise.reject(error);
   },
 );

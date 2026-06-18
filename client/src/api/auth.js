@@ -12,9 +12,9 @@ export const authApi = {
 
   resetPassword: (email) => api.post('/api/reset-password', { email }),
 
-  confirmResetPassword: (confirmToken, newPassword1, newPassword2) =>
+  confirmResetPassword: (confirmToken, newPassword, confirmedPassword) =>
     api.post(`/api/reset-password/${confirmToken}`, {
-      newPassword1,
-      newPassword2,
+      newPassword,
+      confirmedPassword,
     }),
 };

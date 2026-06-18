@@ -5,11 +5,11 @@ export const profileApi = {
 
   changeName: (name) => api.post('/api/profile/change-name', { name }),
 
-  changePassword: (oldPassword, newPassword1, newPassword2) =>
+  changePassword: (oldPassword, newPassword, confirmedPassword) =>
     api.post('/api/profile/change-password', {
       oldPassword,
-      newPassword1,
-      newPassword2,
+      newPassword,
+      confirmedPassword,
     }),
 
   changeEmail: (password, newEmail) =>

@@ -4,8 +4,8 @@ import { useRoute } from 'vue-router';
 import { authApi } from '../api/auth.js';
 
 const route = useRoute();
-const newPassword1 = ref('');
-const newPassword2 = ref('');
+const newPassword = ref('');
+const confirmedPassword = ref('');
 const loading = ref(false);
 const success = ref(false);
 const errors = ref(null);
@@ -16,8 +16,8 @@ const submit = async () => {
   try {
     await authApi.confirmResetPassword(
       route.params.confirmToken,
-      newPassword1.value,
-      newPassword2.value,
+      newPassword.value,
+      confirmedPassword.value,
     );
     success.value = true;
   } catch (err) {
@@ -49,7 +49,7 @@ const submit = async () => {
         <div class="form-group">
           <label>New password</label>
           <input
-            v-model="newPassword1"
+            v-model="newPassword"
             type="password"
             placeholder="Min. 6 characters"
             :class="{ error: errors?.newPassword }"
@@ -59,7 +59,7 @@ const submit = async () => {
         <div class="form-group">
           <label>Confirm new password</label>
           <input
-            v-model="newPassword2"
+            v-model="confirmedPassword"
             type="password"
             placeholder="Repeat password"
             :class="{ error: errors?.newPassword }"
